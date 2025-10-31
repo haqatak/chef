@@ -10,7 +10,7 @@ import type { Doc } from '@convex/_generated/dataModel';
 import { captureMessage } from '@sentry/remix';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
 
-export type ModelProvider = 'openai' | 'google' | 'xai' | 'anthropic' | 'auto';
+export type ModelProvider = 'openai' | 'google' | 'xai' | 'anthropic' | 'auto' | 'ollama';
 
 export function displayModelProviderName(provider: ModelProvider) {
   switch (provider) {
@@ -24,6 +24,8 @@ export function displayModelProviderName(provider: ModelProvider) {
       return 'Anthropic';
     case 'auto':
       return 'Anthropic';
+    case 'ollama':
+      return 'Ollama';
     default: {
       const exhaustiveCheck: never = provider;
       throw new Error(`Unknown model provider: ${exhaustiveCheck}`);
@@ -58,6 +60,7 @@ const providerToIcon: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
+  ollama: svgIcon('/icons/ollama.svg'),
 };
 
 export const models: Partial<
@@ -114,6 +117,11 @@ export const models: Partial<
     name: 'GPT-4.1 Mini',
     provider: 'openai',
     requireKey: true,
+  },
+  'qwen3-coder': {
+    name: 'Qwen3 Coder',
+    provider: 'ollama',
+    requireKey: false,
   },
 } as const;
 

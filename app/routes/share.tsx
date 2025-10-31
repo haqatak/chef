@@ -80,26 +80,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
     document.querySelector('html')?.setAttribute('class', theme);
   }, [theme]);
 
-  useEffect(() => {
-    // Note that this is the 'Project API Key' from PostHog, which is
-    // write-only and PostHog says is safe to use in public apps.
-    const key = import.meta.env.VITE_POSTHOG_KEY || '';
-    const apiHost = import.meta.env.VITE_POSTHOG_HOST || '';
+  // useEffect(() => {
+  //   // Note that this is the 'Project API Key' from PostHog, which is
+  //   // write-only and PostHog says is safe to use in public apps.
+  //   const key = import.meta.env.VITE_POSTHOG_KEY || '';
+  //   const apiHost = import.meta.env.VITE_POSTHOG_HOST || '';
 
-    // See https://posthog.com/docs/libraries/js#config
-    posthog.init(key, {
-      api_host: apiHost,
-      ui_host: 'https://us.posthog.com/',
-      // Set to true to log PostHog events to the console.
-      debug: false,
-      enable_recording_console_log: false,
-      capture_pageview: true,
-      // By default, we use 'cookieless' tracking
-      // (https://posthog.com/tutorials/cookieless-tracking) and may change this
-      // later if we add a cookie banner.
-      persistence: 'memory',
-    });
-  }, []);
+  //   // See https://posthog.com/docs/libraries/js#config
+  //   posthog.init(key, {
+  //     api_host: apiHost,
+  //     ui_host: 'https://us.posthog.com/',
+  //     // Set to true to log PostHog events to the console.
+  //     debug: false,
+  //     enable_recording_console_log: false,
+  //     capture_pageview: true,
+  //     // By default, we use 'cookieless' tracking
+  //     // (https://posthog.com/tutorials/cookieless-tracking) and may change this
+  //     // later if we add a cookie banner.
+  //     persistence: 'memory',
+  //   });
+  // }, []);
 
   return (
     <>
