@@ -206,6 +206,7 @@ export const Chat = memo(
           'gemini-2.5-pro': { providerName: 'google', apiKeyField: 'google' },
           'claude-3-5-haiku': { providerName: 'anthropic', apiKeyField: 'value' },
           'gpt-4.1-mini': { providerName: 'openai', apiKeyField: 'openai' },
+          'qwen3-coder': { providerName: 'ollama', apiKeyField: 'value' },
         };
 
         // Get provider info for the current model
@@ -322,6 +323,9 @@ export const Chat = memo(
         } else if (modelSelection === 'gpt-5') {
           modelProvider = 'OpenAI';
           modelChoice = 'gpt-5';
+        } else if (modelSelection === 'qwen3-coder') {
+          modelProvider = 'Ollama';
+          modelChoice = 'qwen3-coder';
         } else {
           const _exhaustiveCheck: never = modelSelection;
           throw new Error(`Unknown model: ${_exhaustiveCheck}`);
