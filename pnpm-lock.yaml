@@ -282,6 +282,9 @@ importers:
       oidc:
         specifier: link:@vercel/functions/oidc
         version: link:@vercel/functions/oidc
+      ollama-ai-provider:
+        specifier: ^0.1.0
+        version: 0.1.0(zod@3.24.1)
       openai:
         specifier: ^4.93.0
         version: 4.93.0(ws@8.18.0)(zod@3.24.1)
@@ -622,6 +625,15 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
+  '@ai-sdk/provider-utils@0.0.5':
+    resolution: {integrity: sha512-VVy9eQS+vS2j6cqTEQ9htMHz2nW/HFAkDXLvNFPoi1pZkviknJZEzb+DZUna6Od+jBf/TVA0HZwYnyGDaeI9cQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
   '@ai-sdk/provider-utils@1.0.22':
     resolution: {integrity: sha512-YHK2rpj++wnLVc9vPGzGFP3Pjeld2MwhKinetA0zKXOoHAT/Jit5O8kZsxcSlJPu9wvcGT1UGZEjZrtO7PfFOQ==}
     engines: {node: '>=18'}
@@ -657,6 +669,10 @@ packages:
 
   '@ai-sdk/provider@0.0.26':
     resolution: {integrity: sha512-dQkfBDs2lTYpKM8389oopPdQgIU007GQyCbuPPrV+K6MtSII3HBfE0stUIMXUb44L+LK1t6GXPP7wjSzjO6uKg==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@0.0.3':
+    resolution: {integrity: sha512-0B8P6VZpJ6F9yS9BpmJBYSqIaIfeRtL5tD5SP+qgR8y0pPwalIbRMUFiLz9YUT6g70MJsCLpm/2/fX3cfAYCJw==}
     engines: {node: '>=18'}
 
   '@ai-sdk/provider@1.1.0':
@@ -7461,6 +7477,11 @@ packages:
       react: '*'
       react-dom: '*'
 
+  nanoid@3.3.6:
+    resolution: {integrity: sha512-BGcqMMJuToF7i1rt+2PWSNVnWIkGCU78jBG3RxO/bZlnZPK2Cmi2QaffxGO/2RvWi9sL+FAiRiXMgsyxQ1DIDA==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
   nanoid@3.3.8:
     resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -7602,6 +7623,15 @@ packages:
 
   ohash@1.1.6:
     resolution: {integrity: sha512-TBu7PtV8YkAZn0tSxobKY2n2aAQva936lhRrj6957aDaCf9IEtqsKbgMzXE/F/sjqYOwmrukeORHNLe5glk7Cg==}
+
+  ollama-ai-provider@0.1.0:
+    resolution: {integrity: sha512-XyuHTnPSDN1I3SByuV0X6fNAdn64u19oE/BXAt1nMWyd2nKG/7uGZ+uNuwYRXxiAFIyQIFb75ip2OMqTHGcVYw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
 
   on-finished@2.3.0:
     resolution: {integrity: sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww==}
@@ -9976,6 +10006,15 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.3(zod@3.24.1)
       zod: 3.24.1
 
+  '@ai-sdk/provider-utils@0.0.5(zod@3.24.1)':
+    dependencies:
+      '@ai-sdk/provider': 0.0.3
+      eventsource-parser: 1.1.2
+      nanoid: 3.3.6
+      secure-json-parse: 2.7.0
+    optionalDependencies:
+      zod: 3.24.1
+
   '@ai-sdk/provider-utils@1.0.22(zod@3.24.1)':
     dependencies:
       '@ai-sdk/provider': 0.0.26
@@ -10014,6 +10053,10 @@ snapshots:
       zod: 3.24.1
 
   '@ai-sdk/provider@0.0.26':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@0.0.3':
     dependencies:
       json-schema: 0.4.0
 
@@ -18071,6 +18114,8 @@ snapshots:
       stacktrace-js: 2.0.2
       stylis: 4.3.6
 
+  nanoid@3.3.6: {}
+
   nanoid@3.3.8: {}
 
   nanostores@0.10.3: {}
@@ -18215,6 +18260,13 @@ snapshots:
 
   ohash@1.1.6:
     optional: true
+
+  ollama-ai-provider@0.1.0(zod@3.24.1):
+    dependencies:
+      '@ai-sdk/provider': 0.0.3
+      '@ai-sdk/provider-utils': 0.0.5(zod@3.24.1)
+    optionalDependencies:
+      zod: 3.24.1
 
   on-finished@2.3.0:
     dependencies:

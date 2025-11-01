@@ -6,6 +6,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { useMessageParser, type PartCache } from '~/lib/hooks/useMessageParser';
 import { useSnapScroll } from '~/lib/hooks/useSnapScroll';
 import { description } from '~/lib/stores/description';
+import { useOllamaModels } from '~/lib/hooks/useOllamaModels';
 import { chatStore } from '~/lib/stores/chatId';
 import { workbenchStore } from '~/lib/stores/workbench.client';
 import { MAX_CONSECUTIVE_DEPLOY_ERRORS, type ModelSelection } from '~/utils/constants';
@@ -155,6 +156,7 @@ export const Chat = memo(
     const apiKey = useQuery(api.apiKeys.apiKeyForCurrentMember);
 
     const [modelSelection, setModelSelection] = useLocalStorage<ModelSelection>('modelSelection', 'auto');
+    const ollamaModels = useOllamaModels();
     const terminalInitializationOptions = useMemo(
       () => ({
         isReload,
@@ -188,6 +190,9 @@ export const Chat = memo(
 
     const checkApiKeyForCurrentModel = useCallback(
       (model: ModelSelection): { hasMissingKey: boolean; provider?: ModelProvider; requireKey: boolean } => {
+        if (ollamaModels.includes(model)) {
+          return { hasMissingKey: false, requireKey: false };
+        }
         const requireKey = models[model]?.requireKey || false;
         if (apiKey?.preference !== 'always' && !requireKey) {
           return { hasMissingKey: false, requireKey: false };
@@ -206,7 +211,6 @@ export const Chat = memo(
           'gemini-2.5-pro': { providerName: 'google', apiKeyField: 'google' },
           'claude-3-5-haiku': { providerName: 'anthropic', apiKeyField: 'value' },
           'gpt-4.1-mini': { providerName: 'openai', apiKeyField: 'openai' },
-          'qwen3-coder': { providerName: 'ollama', apiKeyField: 'value' },
         };
 
         // Get provider info for the current model
@@ -241,7 +245,7 @@ export const Chat = memo(
       Math.random() < useAnthropicFraction ? ['Anthropic', 'Bedrock'] : ['Bedrock', 'Anthropic'];
 
     const checkTokenUsage = useCallback(async () => {
-      if (hasApiKeySet(modelSelection, useGeminiAuto, apiKey)) {
+      if (hasApiKeySet(modelSelection, useGeminiAuto, apiKey) || ollamaModels.includes(modelSelection)) {
         setDisableChatMessage(null);
         return;
       }
@@ -323,9 +327,9 @@ export const Chat = memo(
         } else if (modelSelection === 'gpt-5') {
           modelProvider = 'OpenAI';
           modelChoice = 'gpt-5';
-        } else if (modelSelection === 'qwen3-coder') {
+        } else if (ollamaModels.includes(modelSelection)) {
           modelProvider = 'Ollama';
-          modelChoice = 'qwen3-coder';
+          modelChoice = modelSelection;
         } else {
           const _exhaustiveCheck: never = modelSelection;
           throw new Error(`Unknown model: ${_exhaustiveCheck}`);

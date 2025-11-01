@@ -236,6 +236,8 @@ function hasApiKeySetForProvider(
       return userApiKey?.xai !== undefined;
     case 'Google':
       return userApiKey?.google !== undefined;
+    case 'Ollama':
+      return true;
     default:
       return false;
   }

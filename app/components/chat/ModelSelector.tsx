@@ -1,7 +1,7 @@
 import { Combobox } from '@ui/Combobox';
 import { MagicWandIcon } from '@radix-ui/react-icons';
 import type { ModelSelection } from '~/utils/constants';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Tooltip } from '@ui/Tooltip';
 import { HandThumbUpIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useQuery } from 'convex/react';
@@ -9,6 +9,7 @@ import { api } from '@convex/_generated/api';
 import type { Doc } from '@convex/_generated/dataModel';
 import { captureMessage } from '@sentry/remix';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
+import { useOllamaModels } from '~/lib/hooks/useOllamaModels';
 
 export type ModelProvider = 'openai' | 'google' | 'xai' | 'anthropic' | 'auto' | 'ollama';
 
@@ -118,11 +119,6 @@ export const models: Partial<
     provider: 'openai',
     requireKey: true,
   },
-  'qwen3-coder': {
-    name: 'Qwen3 Coder',
-    provider: 'ollama',
-    requireKey: false,
-  },
 } as const;
 
 export const ModelSelector = React.memo(function ModelSelector({
@@ -131,14 +127,28 @@ export const ModelSelector = React.memo(function ModelSelector({
   size = 'md',
 }: ModelSelectorProps) {
   const apiKey = useQuery(api.apiKeys.apiKeyForCurrentMember);
-  const selectedModel = models[modelSelection];
+  const ollamaModels = useOllamaModels();
+
+  const allModels = useMemo(() => {
+    const dynamicModels: Record<string, { name: string; provider: ModelProvider; requireKey: boolean }> = {};
+    for (const model of ollamaModels) {
+      dynamicModels[model] = {
+        name: model,
+        provider: 'ollama',
+        requireKey: false,
+      };
+    }
+    return { ...models, ...dynamicModels };
+  }, [ollamaModels]);
+
+  const selectedModel = allModels[modelSelection];
   const { useGeminiAuto, enableGpt5 } = useLaunchDarkly();
   if (!selectedModel) {
     captureMessage(`Model ${modelSelection} not found`);
     setModelSelection('auto');
   }
 
-  const availableModels = Object.entries(models).filter(([key]) => {
+  const availableModels = Object.entries(allModels).filter(([key]) => {
     if (key === 'gpt-5') {
       return enableGpt5;
     }
@@ -164,7 +174,7 @@ export const ModelSelector = React.memo(function ModelSelector({
         setModelSelection(option);
       }}
       Option={({ value, inButton }) => {
-        const model = models[value as ModelSelection];
+        const model = allModels[value as ModelSelection];
         if (!model) {
           return null;
         }
