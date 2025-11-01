@@ -5,6 +5,7 @@ import { createXai } from '@ai-sdk/xai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOllama } from 'ollama-ai-provider';
 import { awsCredentialsProvider } from '@vercel/functions/oidc';
 import { captureException } from '@sentry/remix';
 import { logger } from 'chef-agent/utils/logger';
@@ -53,6 +54,8 @@ export function modelForProvider(provider: ModelProvider, modelChoice: string | 
       return getEnv('XAI_MODEL') || 'grok-3-mini';
     case 'Google':
       return getEnv('GOOGLE_MODEL') || 'gemini-2.5-pro';
+    case 'Ollama':
+      return modelChoice || getEnv('OLLAMA_MODEL') || 'qwen3-coder';
     default: {
       const _exhaustiveCheck: never = provider;
       throw new Error(`Unknown provider: ${_exhaustiveCheck}`);
@@ -215,6 +218,17 @@ export function getProvider(
       provider = {
         model: anthropic(model),
         maxTokens: anthropicMaxTokens(modelChoice),
+      };
+      break;
+    }
+    case 'Ollama': {
+      model = modelForProvider(modelProvider, modelChoice);
+      const ollama = createOllama({
+        baseURL: getEnv('OLLAMA_BASE_URL'),
+      });
+      provider = {
+        model: ollama(model),
+        maxTokens: 8192,
       };
       break;
     }
