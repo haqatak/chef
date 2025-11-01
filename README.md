@@ -86,6 +86,24 @@ XAI_API_KEY=<your api key>
 
 Note: You can also add your own API keys through the Chef settings page.
 
+### Using Ollama
+
+Chef can also be configured to use a local [Ollama](https://ollama.ai/) instance for code generation. This allows you to use any model supported by Ollama.
+
+To enable Ollama, add the following environment variable to your `.env.local` file:
+
+```env
+OLLAMA_BASE_URL=<your ollama server url>
+```
+
+For example:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+Chef will automatically fetch the list of available models from your Ollama server and display them in the model selector.
+
 **6. Run Chef backend and frontend**
 
 Run the following commands in your terminal:
