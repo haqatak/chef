@@ -1,4 +1,4 @@
-import { useFlags } from 'launchdarkly-react-client-sdk';
+// import { useFlags } from 'launchdarkly-react-client-sdk';
 import { kebabCase } from 'lodash';
 
 const flagDefaults: {
@@ -45,5 +45,5 @@ export const flagDefaultsKebabCase = kebabCaseKeys(flagDefaults);
 // useLaunchDarkly is a thin wrapper on LaunchDarkly's react sdk which adds manual to flag keys.
 // At some point, we can generate this file.
 export function useLaunchDarkly() {
-  return useFlags<typeof flagDefaults>();
+  return flagDefaults;
 }

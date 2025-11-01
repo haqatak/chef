@@ -28,8 +28,6 @@ export function hasApiKeySet(
       return !!apiKey.xai?.trim();
     case 'gemini-2.5-pro':
       return !!apiKey.google?.trim();
-    case 'qwen3-coder':
-      return true;
     default: {
       const _exhaustiveCheck: never = modelSelection;
       return false;
