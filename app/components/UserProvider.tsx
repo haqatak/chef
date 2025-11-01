@@ -5,19 +5,16 @@ import { useConvexSessionIdOrNullOrLoading, getConvexAuthToken } from '~/lib/sto
 import { useChatId } from '~/lib/stores/chatId';
 import { setProfile } from '~/lib/stores/profile';
 import { getConvexProfile } from '~/lib/convexProfile';
-import { useLDClient, withLDProvider, basicLogger } from 'launchdarkly-react-client-sdk';
+// import { useLDClient, withLDProvider, basicLogger } from 'launchdarkly-react-client-sdk';
 import { api } from '@convex/_generated/api';
 import { useAuth } from '@workos-inc/authkit-react';
 
-export const UserProvider = withLDProvider<any>({
-  clientSideID: import.meta.env.VITE_LD_CLIENT_SIDE_ID,
-  options: {
-    logger: basicLogger({ level: 'error' }),
-  },
-})(UserProviderInner);
+export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+  return <UserProviderInner>{children}</UserProviderInner>;
+};
 
 function UserProviderInner({ children }: { children: React.ReactNode }) {
-  const launchdarkly = useLDClient();
+  // const launchdarkly = useLDClient();
   const { user } = useAuth();
   const convexMemberId = useQuery(api.sessions.convexMemberId);
   const sessionId = useConvexSessionIdOrNullOrLoading();
@@ -39,10 +36,10 @@ function UserProviderInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function updateProfile() {
       if (user) {
-        launchdarkly?.identify({
-          key: convexMemberId ?? '',
-          email: user.email ?? '',
-        });
+        // launchdarkly?.identify({
+        //   key: convexMemberId ?? '',
+        //   email: user.email ?? '',
+        // });
         setUser({
           id: convexMemberId ?? '',
           username: user.firstName ? (user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName) : '',
@@ -75,14 +72,14 @@ function UserProviderInner({ children }: { children: React.ReactNode }) {
           });
         }
       } else {
-        launchdarkly?.identify({
-          anonymous: true,
-        });
+        // launchdarkly?.identify({
+        //   anonymous: true,
+        // });
       }
     }
     void updateProfile();
     // Including tokenValue is important here even though it's not a direct dependency
-  }, [launchdarkly, user, convex, tokenValue, convexMemberId]);
+  }, [user, convex, tokenValue, convexMemberId]);
 
   return children;
 }
