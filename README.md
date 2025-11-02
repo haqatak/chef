@@ -32,7 +32,8 @@ Chef is easy to use for local development without changes. Read on for instructi
 
 ### Running Locally
 
-Note: This will use the hosted Convex control plane to provision Convex projects. However, Chef tokens used in this enviroment will not count towards usage in your Convex account.
+> [!NOTE]
+> The authentication system has been removed for ease of local development. The application now runs in a "demo mode" where chats and projects are not saved.
 
 **1. Clone the project**
 
@@ -58,22 +59,7 @@ npx convex dev --once # follow the steps to create a Convex project in your team
 
 Note: `nvm` only works on Mac and Linux. If you are using Windows, you may have to find an alternative.
 
-**3. Set up Chef OAuth application**
-
-Go to the Convex [dashboard](https://dashboard.convex.dev/team/settings/applications/oauth-apps) and create an OAuth application. The team you use to create the application will be the only team you can sign-in with on local Chef. Redirect URIs will not matter, but you can set one to http://127.0.0.1:5173 (or whatever port you’ll run the Chef UI on) so that the form can be submitted.
-
-**4. Set up Convex deployment**
-
-Use `npx convex dashboard` to open the Convex [dashboard](https://dashboard.convex.dev) and go to Settings → Environment Variables. Then, set the following environment variables:
-
-```env
-BIG_BRAIN_HOST=https://api.convex.dev
-CONVEX_OAUTH_CLIENT_ID=<value from oauth setup>
-CONVEX_OAUTH_CLIENT_SECRET=<value from oauth setup>
-WORKOS_CLIENT_ID=<value from .env.development>
-```
-
-**5. Add API keys for model providers**
+**3. Add API keys for model providers**
 
 Add any of the following API keys in your `.env.local` to enable code generation:
 
