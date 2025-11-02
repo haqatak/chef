@@ -12,7 +12,7 @@ import { DownloadButton } from './DownloadButton';
 import { LoggedOutHeaderButtons } from './LoggedOutHeaderButtons';
 import { profileStore, setProfile } from '~/lib/stores/profile';
 import { Menu as MenuComponent, MenuItem as MenuItemComponent } from '@ui/Menu';
-import { SESSION_ID_KEY } from '~/components/chat/ChefAuthWrapper';
+import { SESSION_ID_KEY } from '~/lib/stores/sessionId';
 import { FeedbackButton } from './FeedbackButton';
 import { DiscordButton } from './DiscordButton';
 import { PromptDebugButton } from './PromptDebugButton';
@@ -21,7 +21,7 @@ import { useSelectedTeamSlug } from '~/lib/stores/convexTeams';
 import { useUsage } from '~/lib/stores/usage';
 import { useReferralStats } from '~/lib/hooks/useReferralCode';
 import { Menu } from '~/components/sidebar/Menu.client';
-import { useAuth } from '@workos-inc/authkit-react';
+// import { useAuth } from '@workos-inc/authkit-react';
 
 export function Header({ hideSidebarIcon = false }: { hideSidebarIcon?: boolean }) {
   const chat = useStore(chatStore);
@@ -32,7 +32,7 @@ export function Header({ hideSidebarIcon = false }: { hideSidebarIcon?: boolean 
   const showSidebarIcon = !hideSidebarIcon && isLoggedIn;
 
   const profile = useStore(profileStore);
-  const { signOut } = useAuth();
+  // const { signOut } = useAuth();
 
   const teamSlug = useSelectedTeamSlug();
   const { isPaidPlan } = useUsage({ teamSlug });
@@ -41,7 +41,7 @@ export function Header({ hideSidebarIcon = false }: { hideSidebarIcon?: boolean 
   const handleLogout = () => {
     setProfile(null);
     window.localStorage.removeItem(SESSION_ID_KEY);
-    signOut({ returnTo: window.location.origin });
+    window.location.href = '/';
   };
 
   const handleSettingsClick = () => {

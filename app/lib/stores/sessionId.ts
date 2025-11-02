@@ -3,6 +3,8 @@ import { useStore } from '@nanostores/react';
 import type { ConvexReactClient } from 'convex/react';
 import { atom } from 'nanostores';
 
+export const SESSION_ID_KEY = 'sessionIdForConvex';
+
 export function useConvexSessionIdOrNullOrLoading(): Id<'sessions'> | null | undefined {
   const sessionId = useStore(sessionIdStore);
   return sessionId;
