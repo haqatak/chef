@@ -15,7 +15,7 @@ export function ExistingChat({ chatId }: { chatId: string }) {
   // Fill in the chatID store from props early in app initialization. If this
   // chat ID ends up being invalid, we'll abandon the page and redirect to
   // the homepage.
-  setPageLoadChatId(chatId);
+  // setPageLoadChatId(chatId);
 
   return (
     <>
