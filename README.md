@@ -101,9 +101,13 @@ pnpm run dev
 npx convex dev
 ```
 
-Congratulations, you now have Chef running locally! You can log in to Chef with your existing Convex account.
+Congratulations, you now have Chef running locally!
 
 Note: Chef is accessible at http://127.0.0.1:{port}/ and will not work properly on http://localhost:{port}/.
+
+### Starting a New Project
+
+To start a new project, simply navigate to the home page. In the default "demo mode," this will start a new, temporary chat session. If you have re-enabled authentication, this will create a new project in your Convex account.
 
 ## Repository Layout
 
