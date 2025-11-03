@@ -19,24 +19,17 @@ import { classNames } from '~/utils/classNames';
 import { ConvexConnection } from '~/components/convex/ConvexConnection';
 import { PROMPT_COOKIE_KEY, type ModelSelection } from '~/utils/constants';
 import { ModelSelector } from './ModelSelector';
-import { TeamSelector } from '~/components/convex/TeamSelector';
 import { ArrowRightIcon, ExclamationTriangleIcon, MagnifyingGlassIcon, StopIcon } from '@radix-ui/react-icons';
 import { SquaresPlusIcon } from '@heroicons/react/24/outline';
 import { Tooltip } from '@ui/Tooltip';
-import { setSelectedTeamSlug, useSelectedTeamSlug } from '~/lib/stores/convexTeams';
-import { convexProjectStore } from '~/lib/stores/convexProject';
-import { useChefAuth } from './ChefAuthWrapper';
-import { getConvexAuthToken, useConvexSessionIdOrNullOrLoading } from '~/lib/stores/sessionId';
+import { useConvexSessionIdOrNullOrLoading } from '~/lib/stores/sessionId';
 import { KeyboardShortcut } from '@ui/KeyboardShortcut';
 import { Button } from '@ui/Button';
 import { Spinner } from '@ui/Spinner';
 import { debounce } from '~/utils/debounce';
-import { toast } from 'sonner';
-import { captureException } from '@sentry/remix';
 import { Menu as MenuComponent, MenuItem as MenuItemComponent } from '@ui/Menu';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { ChatBubbleLeftIcon, DocumentArrowUpIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '@workos-inc/authkit-react';
 import { useConvex } from 'convex/react';
 
 const PROMPT_LENGTH_WARNING_THRESHOLD = 2000;
@@ -111,10 +104,7 @@ export const MessageInput = memo(function MessageInput({
   setModelSelection: (modelSelection: ModelSelection) => void;
   numMessages: number | undefined;
 }) {
-  const [isEnhancing, setIsEnhancing] = useState(false);
   const sessionId = useConvexSessionIdOrNullOrLoading();
-  const chefAuthState = useChefAuth();
-  const selectedTeamSlug = useSelectedTeamSlug();
   const convex = useConvex();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -152,7 +142,7 @@ export const MessageInput = memo(function MessageInput({
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = useCallback(
     (event) => {
-      if (event.key === 'Enter' && selectedTeamSlug) {
+      if (event.key === 'Enter') {
         if (event.shiftKey) {
           return;
         }
@@ -172,7 +162,7 @@ export const MessageInput = memo(function MessageInput({
         handleSend();
       }
     },
-    [selectedTeamSlug, handleSend, isStreaming, onStop],
+    [handleSend, isStreaming, onStop],
   );
 
   const handleChange: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => {
@@ -180,51 +170,6 @@ export const MessageInput = memo(function MessageInput({
     messageInputStore.set(value);
     cachePrompt(value);
   }, []);
-
-  const enhancePrompt = useCallback(async () => {
-    try {
-      setIsEnhancing(true);
-
-      const token = getConvexAuthToken(convex);
-      if (!token) {
-        throw new Error('No auth token');
-      }
-      const response = await fetch('/api/enhance-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: input.trim(),
-          token,
-          teamSlug: selectedTeamSlug,
-          deploymentName: convexProjectStore.get()?.deploymentName,
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 402) {
-          throw new Error('No remaining tokens available for prompt enhancement');
-        }
-        throw new Error('Failed to enhance prompt. Please try again.');
-      }
-
-      const data = await response.json();
-      if (data.enhancedPrompt) {
-        messageInputStore.set(data.enhancedPrompt);
-      }
-    } catch (error) {
-      captureException('Failed to enhance prompt', {
-        level: 'error',
-        extra: {
-          error,
-        },
-      });
-      toast.error(error instanceof Error ? error.message : 'Failed to enhance prompt. Please try again.');
-    } finally {
-      setIsEnhancing(false);
-    }
-  }, [input, convex, selectedTeamSlug]);
 
   // Helper to insert template and select '[...]'
   const insertTemplate = useCallback(
@@ -277,92 +222,59 @@ export const MessageInput = memo(function MessageInput({
             'flex items-center gap-2 border rounded-b-xl border-t-0 bg-background-secondary/80 p-1.5 text-sm flex-wrap',
           )}
         >
-          {chefAuthState.kind === 'fullyLoggedIn' && (
-            <ModelSelector modelSelection={modelSelection} setModelSelection={setModelSelection} size="sm" />
-          )}
-          {!chatStarted && sessionId && (
-            <TeamSelector
-              description="Your project will be created in this Convex team"
-              selectedTeamSlug={selectedTeamSlug}
-              setSelectedTeamSlug={setSelectedTeamSlug}
-              size="sm"
-            />
-          )}
+          <ModelSelector modelSelection={modelSelection} setModelSelection={setModelSelection} size="sm" />
           {chatStarted && <ConvexConnection />}
           {input.length > 3 && input.length <= PROMPT_LENGTH_WARNING_THRESHOLD && <NewLineShortcut />}
           {input.length > PROMPT_LENGTH_WARNING_THRESHOLD && <CharacterWarning />}
           <div className="ml-auto flex items-center gap-1">
-            {chefAuthState.kind === 'unauthenticated' && <SignInButton />}
-            {chefAuthState.kind === 'fullyLoggedIn' && (
-              <MenuComponent
-                buttonProps={{
-                  variant: 'neutral',
-                  tip: 'Use a recipe',
-                  inline: true,
-                  icon: (
-                    <div className="text-lg">
-                      <SquaresPlusIcon className="size-4" />
-                    </div>
-                  ),
-                }}
-                placement="top-start"
-              >
-                <div className="ml-3 flex items-center gap-1">
-                  <h2 className="text-sm font-bold">Use a recipe</h2>
-                  <Tooltip tip="Recipes are Chef prompts that add powerful full-stack features to your app." side="top">
-                    <span className="cursor-help text-content-tertiary">
-                      <InformationCircleIcon className="size-4" />
-                    </span>
-                  </Tooltip>
+            <MenuComponent
+              buttonProps={{
+                variant: 'neutral',
+                tip: 'Use a recipe',
+                inline: true,
+                icon: (
+                  <div className="text-lg">
+                    <SquaresPlusIcon className="size-4" />
+                  </div>
+                ),
+              }}
+              placement="top-start"
+            >
+              <div className="ml-3 flex items-center gap-1">
+                <h2 className="text-sm font-bold">Use a recipe</h2>
+                <Tooltip tip="Recipes are Chef prompts that add powerful full-stack features to your app." side="top">
+                  <span className="cursor-help text-content-tertiary">
+                    <InformationCircleIcon className="size-4" />
+                  </span>
+                </Tooltip>
+              </div>
+              <MenuItemComponent action={() => insertTemplate('Make a collaborative text editor that ...')}>
+                <div className="flex w-full items-center gap-2">
+                  <PencilSquareIcon className="size-4 text-content-secondary" />
+                  Make a collaborative text editor
                 </div>
-                <MenuItemComponent action={() => insertTemplate('Make a collaborative text editor that ...')}>
-                  <div className="flex w-full items-center gap-2">
-                    <PencilSquareIcon className="size-4 text-content-secondary" />
-                    Make a collaborative text editor
-                  </div>
-                </MenuItemComponent>
-                <MenuItemComponent action={() => insertTemplate('Add AI chat to ...')}>
-                  <div className="flex w-full items-center gap-2">
-                    <ChatBubbleLeftIcon className="size-4 text-content-secondary" />
-                    Add AI chat
-                  </div>
-                </MenuItemComponent>
-                <MenuItemComponent action={() => insertTemplate('Add file upload to ...')}>
-                  <div className="flex w-full items-center gap-2">
-                    <DocumentArrowUpIcon className="size-4 text-content-secondary" />
-                    Add file upload
-                  </div>
-                </MenuItemComponent>
-                <MenuItemComponent action={() => insertTemplate('Add full text search to ...')}>
-                  <div className="flex w-full items-center gap-2">
-                    <MagnifyingGlassIcon className="size-4 text-content-secondary" />
-                    Add full text search
-                  </div>
-                </MenuItemComponent>
-              </MenuComponent>
-            )}
-            {chefAuthState.kind === 'fullyLoggedIn' && (
-              <EnhancePromptButton
-                isEnhancing={isEnhancing}
-                disabled={!selectedTeamSlug || disabled || input.length === 0}
-                onClick={enhancePrompt}
-              />
-            )}
+              </MenuItemComponent>
+              <MenuItemComponent action={() => insertTemplate('Add AI chat to ...')}>
+                <div className="flex w-full items-center gap-2">
+                  <ChatBubbleLeftIcon className="size-4 text-content-secondary" />
+                  Add AI chat
+                </div>
+              </MenuItemComponent>
+              <MenuItemComponent action={() => insertTemplate('Add file upload to ...')}>
+                <div className="flex w-full items-center gap-2">
+                  <DocumentArrowUpIcon className="size-4 text-content-secondary" />
+                  Add file upload
+                </div>
+              </MenuItemComponent>
+              <MenuItemComponent action={() => insertTemplate('Add full text search to ...')}>
+                <div className="flex w-full items-center gap-2">
+                  <MagnifyingGlassIcon className="size-4 text-content-secondary" />
+                  Add full text search
+                </div>
+              </MenuItemComponent>
+            </MenuComponent>
             <Button
-              disabled={
-                (!isStreaming && input.length === 0) ||
-                !selectedTeamSlug ||
-                chefAuthState.kind === 'loading' ||
-                sendMessageInProgress ||
-                disabled
-              }
-              tip={
-                chefAuthState.kind === 'unauthenticated'
-                  ? 'Please sign in to continue'
-                  : !selectedTeamSlug
-                    ? 'Please select a team to continue'
-                    : undefined
-              }
+              disabled={(!isStreaming && input.length === 0) || sendMessageInProgress || disabled}
               onClick={handleClickButton}
               size="xs"
               className="ml-2 h-[1.625rem]"
@@ -601,26 +513,6 @@ const CharacterWarning = memo(function CharacterWarning() {
         Prompt exceeds {PROMPT_LENGTH_WARNING_THRESHOLD.toLocaleString()} characters
       </div>
     </Tooltip>
-  );
-});
-
-const SignInButton = memo(function SignInButton() {
-  const { signIn } = useAuth();
-
-  return (
-    <Button
-      variant="neutral"
-      onClick={() => {
-        void signIn();
-      }}
-      size="xs"
-      className="text-xs font-normal"
-      icon={<img className="size-4" src="/icons/Convex.svg" alt="Convex" />}
-    >
-      <>
-        <span>Sign in</span>
-      </>
-    </Button>
   );
 });
 
