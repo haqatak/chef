@@ -1,7 +1,7 @@
 import { Combobox } from '@ui/Combobox';
 import { MagicWandIcon } from '@radix-ui/react-icons';
 import type { ModelSelection } from '~/utils/constants';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Tooltip } from '@ui/Tooltip';
 import { HandThumbUpIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { useQuery } from 'convex/react';
