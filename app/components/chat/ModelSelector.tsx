@@ -178,7 +178,7 @@ export const ModelSelector = React.memo(function ModelSelector({
           throw new Error('Model selection set to null');
         }
 
-        setModelSelection(option);
+        setTimeout(() => setModelSelection(option), 0);
       }}
       Option={({ value, inButton }) => {
         const model = allModels[value as ModelSelection];

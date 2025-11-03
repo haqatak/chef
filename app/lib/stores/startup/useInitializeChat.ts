@@ -12,9 +12,7 @@ export function useHomepageInitializeChat(chatId: string, setChatInitialized: (c
   const convex = useConvex();
 
   return useCallback(async () => {
-    console.log('[useInitializeChat] Starting chat initialization...');
     const sessionId = await waitForConvexSessionId('useInitializeChat');
-    console.log('[useInitializeChat] Got session ID:', sessionId);
 
     // Initialize the chat and start project creation
     await convex.mutation(api.messages.initializeChat, {
@@ -22,7 +20,6 @@ export function useHomepageInitializeChat(chatId: string, setChatInitialized: (c
       sessionId,
       projectInitParams: null,
     });
-    console.log('[useInitializeChat] Chat initialized in Convex.');
 
     try {
       // Wait for the Convex project to be successfully created before allowing chat to start
@@ -35,7 +32,6 @@ export function useHomepageInitializeChat(chatId: string, setChatInitialized: (c
         }),
       ]);
       setChatInitialized(true);
-      console.log('[useInitializeChat] Convex project connection established.');
     } catch (error) {
       console.error('Failed to create Convex project:', error);
       if (error instanceof Error && error.message === 'Connection timeout') {
@@ -48,7 +44,6 @@ export function useHomepageInitializeChat(chatId: string, setChatInitialized: (c
 
     // Wait for the WebContainer to have its snapshot loaded before sending a message.
     await waitForBootStepCompleted(ContainerBootState.LOADING_SNAPSHOT);
-    console.log('[useInitializeChat] Container boot completed.');
     return true;
   }, [convex, chatId, setChatInitialized]);
 }
