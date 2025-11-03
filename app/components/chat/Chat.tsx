@@ -245,43 +245,9 @@ export const Chat = memo(
       Math.random() < useAnthropicFraction ? ['Anthropic', 'Bedrock'] : ['Bedrock', 'Anthropic'];
 
     const checkTokenUsage = useCallback(async () => {
-      if (hasApiKeySet(modelSelection, useGeminiAuto, apiKey) || ollamaModels.includes(modelSelection)) {
-        setDisableChatMessage(null);
-        return;
-      }
-
-      try {
-        const teamSlug = selectedTeamSlugStore.get();
-        if (!teamSlug) {
-          console.error('No team slug');
-          return; // Just return instead of throwing
-        }
-        const token = getConvexAuthToken(convex);
-        if (!token) {
-          console.error('No token');
-          return; // Just return instead of throwing
-        }
-
-        const tokenUsage = await getTokenUsage(VITE_PROVISION_HOST, token, teamSlug);
-        if (tokenUsage.status === 'error') {
-          console.error('Failed to check for token usage', tokenUsage.httpStatus, tokenUsage.httpBody);
-        } else {
-          const { centitokensUsed, centitokensQuota, isTeamDisabled, isPaidPlan } = tokenUsage;
-          if (centitokensUsed !== undefined && centitokensQuota !== undefined) {
-            console.log(`Convex tokens used/quota: ${centitokensUsed} / ${centitokensQuota}`);
-            if (isTeamDisabled) {
-              setDisableChatMessage({ type: 'TeamDisabled', isPaidPlan });
-            } else if (!isPaidPlan && centitokensUsed > centitokensQuota && !hasAnyApiKeySet(apiKey)) {
-              setDisableChatMessage({ type: 'ExceededQuota' });
-            } else {
-              setDisableChatMessage(null);
-            }
-          }
-        }
-      } catch (error) {
-        captureException(error);
-      }
-    }, [apiKey, convex, modelSelection, setDisableChatMessage, useGeminiAuto]);
+      // In "demo mode", we don't need to check for token usage.
+      return;
+    }, []);
 
     const { messages, status, stop, append, setMessages, reload, error } = useChat({
       initialMessages,
