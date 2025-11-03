@@ -143,10 +143,13 @@ export const ModelSelector = React.memo(function ModelSelector({
 
   const selectedModel = allModels[modelSelection];
   const { useGeminiAuto, enableGpt5 } = useLaunchDarkly();
-  if (!selectedModel) {
-    captureMessage(`Model ${modelSelection} not found`);
-    setModelSelection('auto');
-  }
+
+  useEffect(() => {
+    if (!selectedModel) {
+      captureMessage(`Model ${modelSelection} not found`);
+      setModelSelection('auto');
+    }
+  }, [selectedModel, modelSelection, setModelSelection]);
 
   const availableModels = Object.entries(allModels).filter(([key]) => {
     if (key === 'gpt-5') {
