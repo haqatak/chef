@@ -74,7 +74,7 @@ Note: You can also add your own API keys through the Chef settings page.
 
 ### Using Ollama
 
-Chef can also be configured to use a local [Ollama](https://ollama.ai/) instance for code generation. This allows you to use any model supported by Ollama.
+Chef can also be configured to use a local [Ollama](https://ollama.ai/) instance for code generation. This requires you to have Ollama installed and running on your machine. This allows you to use any model supported by Ollama.
 
 To enable Ollama, add the following environment variable to your `.env.local` file:
 
