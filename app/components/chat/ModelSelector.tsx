@@ -158,6 +158,10 @@ export const ModelSelector = React.memo(function ModelSelector({
     return true;
   });
 
+  if (!allModels[modelSelection]) {
+    return null;
+  }
+
   return (
     <Combobox
       searchPlaceholder="Search models..."
