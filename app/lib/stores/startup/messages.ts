@@ -50,6 +50,22 @@ export async function prepareMessageHistory(args: {
     return { url, update: null };
   }
 
+  // In local mode, save to IndexedDB
+  if (sessionId === 'local-session-id') {
+    try {
+      const slicedMessages = allMessages.slice(0, messageIndex + 1);
+      slicedMessages[messageIndex] = {
+        ...slicedMessages[messageIndex],
+        parts: slicedMessages[messageIndex].parts?.slice(0, partIndex + 1),
+      };
+      const serialized = slicedMessages.map(serializeMessageForConvex);
+      const { saveMessages } = await import('~/lib/db.client');
+      await saveMessages(chatId, serialized);
+    } catch (error) {
+      console.error('[Local Mode] Error saving messages to IndexedDB:', error);
+    }
+  }
+
   let urlHintAndDescription: { urlHint: string; description: string } | undefined;
   if (getKnownUrlId() === undefined) {
     urlHintAndDescription = extractUrlHintAndDescription(allMessages) ?? undefined;
@@ -66,6 +82,15 @@ export async function handleUrlHintAndDescription(
   description: string,
 ) {
   if (getKnownUrlId() === undefined) {
+    // Check if we're in local mode
+    if (sessionId === 'local-session-id' as any) {
+      console.log('[Local Mode] Skipping URL hint and description mutation');
+      descriptionStore.set(description);
+      setKnownUrlId(chatId);
+      setKnownInitialId(chatId);
+      return;
+    }
+    
     const { urlId, initialId } = await convex.mutation(api.messages.setUrlId, {
       sessionId,
       chatId,

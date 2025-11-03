@@ -51,12 +51,14 @@ export const Menu = memo(({ isOpen, onClose }: MenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const sessionId = useConvexSessionIdOrNullOrLoading();
   const convex = useConvex();
-  const list = useQuery(api.messages.getAll, sessionId ? { sessionId } : 'skip') ?? [];
+  const isLocalMode = sessionId === 'local-session-id';
+  // In local mode, return empty list instead of querying Convex
+  const list = useQuery(api.messages.getAll, sessionId && !isLocalMode ? { sessionId } : 'skip') ?? [];
   const [dialogContent, setDialogContent] = useState<ModalContent>(null);
   const [shouldDeleteConvexProject, setShouldDeleteConvexProject] = useState(false);
   const convexProjectInfo = useQuery(
     api.convexProjects.loadConnectedConvexProjectCredentials,
-    dialogContent?.type === 'delete' && sessionId
+    dialogContent?.type === 'delete' && sessionId && !isLocalMode
       ? {
           sessionId,
           chatId: dialogContent.item.initialId,

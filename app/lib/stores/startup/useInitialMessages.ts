@@ -12,6 +12,7 @@ import * as lz4 from 'lz4-wasm';
 import { getConvexSiteUrl } from '~/lib/convexSiteUrl';
 import { subchatIndexStore } from '~/lib/stores/subchats';
 import { useStore } from '@nanostores/react';
+import { selectedTeamSlugStore } from '~/lib/stores/convexTeams';
 
 export interface InitialMessages {
   loadedChatId: string;
@@ -27,10 +28,62 @@ export function useInitialMessages(chatId: string | undefined):
   const convex = useConvex();
   const [initialMessages, setInitialMessages] = useState<InitialMessages | null | undefined>();
   const subchatIndex = useStore(subchatIndexStore);
+  const teamSlug = useStore(selectedTeamSlugStore);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadInitialMessages = async () => {
       const sessionId = await waitForConvexSessionId('loadInitialMessages');
+      
+      // In local mode, load messages from IndexedDB
+      const isLocalMode = teamSlug === 'local-team';
+      if (isLocalMode) {
+        console.log('[Local Mode] Loading messages from IndexedDB');
+        
+        // Set subchat index for local mode
+        if (subchatIndex === undefined) {
+          subchatIndexStore.set(0);
+          return; // Exit early to let effect run again with subchatIndex set
+        }
+        
+        try {
+          const { loadMessages } = await import('~/lib/db.client');
+          const serialized = await loadMessages(chatId || 'local-chat');
+          
+          if (!isMounted) return;
+          
+          if (serialized) {
+            const deserializedMessages = serialized.map(deserializeMessageForConvex);
+            setInitialMessages({
+              loadedChatId: chatId || 'local-chat',
+              serialized,
+              deserialized: deserializedMessages,
+              loadedSubchatIndex: 0,
+            });
+            console.log('[Local Mode] Loaded', deserializedMessages.length, 'messages from IndexedDB');
+          } else {
+            setInitialMessages({
+              loadedChatId: chatId || 'local-chat',
+              serialized: [],
+              deserialized: [],
+              loadedSubchatIndex: 0,
+            });
+            console.log('[Local Mode] No stored messages found');
+          }
+        } catch (error) {
+          console.error('[Local Mode] Error loading messages from IndexedDB:', error);
+          if (!isMounted) return;
+          setInitialMessages({
+            loadedChatId: chatId || 'local-chat',
+            serialized: [],
+            deserialized: [],
+            loadedSubchatIndex: 0,
+          });
+        }
+        return;
+      }
+      
       try {
         const siteUrl = getConvexSiteUrl();
         if (!chatId) {
@@ -124,7 +177,11 @@ export function useInitialMessages(chatId: string | undefined):
       }
     };
     void loadInitialMessages();
-  }, [convex, chatId, subchatIndex]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [convex, chatId, subchatIndex, teamSlug]);
 
   return initialMessages;
 }

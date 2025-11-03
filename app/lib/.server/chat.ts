@@ -80,6 +80,9 @@ export async function chatAction({ request }: ActionFunctionArgs) {
   }
 
   let useUserApiKey = false;
+  
+  // Check if we're in local mode (no real auth token)
+  const isLocalMode = token === 'local-mode-token';
 
   // Use the user's API key if they're set to always mode or if they manually set a model.
   // Sonnet 4 can be used with the default API key since it has the same pricing as Sonnet 3.5
@@ -95,7 +98,8 @@ export async function chatAction({ request }: ActionFunctionArgs) {
   }
 
   // If they're not set to always mode, check to see if the user has any Convex tokens left.
-  if (body.userApiKey?.preference !== 'always') {
+  // Skip this check in local mode (using Ollama)
+  if (body.userApiKey?.preference !== 'always' && !isLocalMode) {
     const resp = await checkTokenUsage(PROVISION_HOST, token, teamSlug, deploymentName);
     if (resp.status === 'error') {
       return new Response(JSON.stringify({ error: 'Failed to check for tokens' }), {
@@ -134,11 +138,15 @@ export async function chatAction({ request }: ActionFunctionArgs) {
       userApiKey = body.userApiKey?.openai;
     } else if (body.modelProvider === 'XAI') {
       userApiKey = body.userApiKey?.xai;
+    } else if (body.modelProvider === 'Ollama') {
+      // Ollama doesn't need an API key - it's local
+      userApiKey = undefined;
     } else {
       userApiKey = body.userApiKey?.google;
     }
 
-    if (!userApiKey) {
+    // Don't require API key for Ollama (local models)
+    if (!userApiKey && body.modelProvider !== 'Ollama') {
       return new Response(
         JSON.stringify({ code: 'missing-api-key', error: `Tried to use missing ${body.modelProvider} API key.` }),
         {
@@ -153,7 +161,7 @@ export async function chatAction({ request }: ActionFunctionArgs) {
     lastMessage: Message | undefined,
     finalGeneration: { usage: LanguageModelUsage; providerMetadata?: ProviderMetadata },
   ) => {
-    if (!userApiKey && getEnv('DISABLE_USAGE_REPORTING') !== '1') {
+    if (!userApiKey && !isLocalMode && getEnv('DISABLE_USAGE_REPORTING') !== '1') {
       await recordUsage(
         PROVISION_HOST,
         token,

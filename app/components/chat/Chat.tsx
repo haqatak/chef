@@ -258,12 +258,12 @@ export const Chat = memo(
         const deploymentName = convexProjectStore.get()?.deploymentName;
         const teamSlug = selectedTeamSlugStore.get();
         const token = getConvexAuthToken(convex);
-        if (!token) {
-          throw new Error('No token');
-        }
-        if (!teamSlug) {
-          throw new Error('No team slug');
-        }
+        
+        // For local mode without auth, use placeholder values
+        // These won't be used when running Ollama locally
+        const isLocalMode = !token || !teamSlug;
+        const localToken = token || 'local-mode-token';
+        const localTeamSlug = teamSlug || 'local-team';
         let modelProvider: ProviderType;
         const retries = retryState.get();
         let modelChoice: string | undefined = undefined;
@@ -331,8 +331,8 @@ export const Chat = memo(
           messages: preparedMessages,
           firstUserMessage: messages.filter((message) => message.role == 'user').length == 1,
           chatInitialId,
-          token,
-          teamSlug,
+          token: localToken,
+          teamSlug: localTeamSlug,
           deploymentName,
           modelProvider,
           // Fall back to the user's API key if the request has failed too many times

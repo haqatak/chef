@@ -5,7 +5,6 @@ import { createXai } from '@ai-sdk/xai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createOllama } from 'ollama-ai-provider';
 import { awsCredentialsProvider } from '@vercel/functions/oidc';
 import { captureException } from '@sentry/remix';
 import { logger } from 'chef-agent/utils/logger';
@@ -223,8 +222,12 @@ export function getProvider(
     }
     case 'Ollama': {
       model = modelForProvider(modelProvider, modelChoice);
-      const ollama = createOllama({
-        baseURL: getEnv('OLLAMA_BASE_URL'),
+      const baseURL = getEnv('OLLAMA_BASE_URL') || 'http://localhost:11434';
+      // Use the standard OpenAI-compatible provider since Ollama supports OpenAI API format
+      const ollama = createOpenAI({
+        baseURL: `${baseURL}/v1`,
+        apiKey: 'ollama', // Ollama doesn't require a real API key
+        fetch,
       });
       provider = {
         model: ollama(model),

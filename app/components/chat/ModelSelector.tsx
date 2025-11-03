@@ -141,24 +141,28 @@ export const ModelSelector = React.memo(function ModelSelector({
     return { ...models, ...dynamicModels };
   }, [ollamaModels]);
 
-  const selectedModel = allModels[modelSelection];
   const { useGeminiAuto, enableGpt5 } = useLaunchDarkly();
+  const selectedModel = allModels[modelSelection];
 
   useEffect(() => {
-    if (!selectedModel) {
+    if (!selectedModel && allModels['auto']) {
       captureMessage(`Model ${modelSelection} not found`);
-      setModelSelection('auto');
+      // Use queueMicrotask to avoid setState during render
+      queueMicrotask(() => setModelSelection('auto'));
     }
-  }, [selectedModel, modelSelection, setModelSelection]);
+  }, [selectedModel, modelSelection, setModelSelection, allModels]);
 
-  const availableModels = Object.entries(allModels).filter(([key]) => {
-    if (key === 'gpt-5') {
-      return enableGpt5;
-    }
-    return true;
-  });
+  const availableModels = useMemo(() => {
+    return Object.entries(allModels).filter(([key]) => {
+      if (key === 'gpt-5') {
+        return enableGpt5;
+      }
+      return true;
+    });
+  }, [allModels, enableGpt5]);
 
-  if (!allModels[modelSelection]) {
+  // Don't render until we have models loaded
+  if (!allModels[modelSelection] || availableModels.length === 0) {
     return null;
   }
 
@@ -178,7 +182,7 @@ export const ModelSelector = React.memo(function ModelSelector({
           throw new Error('Model selection set to null');
         }
 
-        setTimeout(() => setModelSelection(option), 0);
+        queueMicrotask(() => setModelSelection(option));
       }}
       Option={({ value, inButton }) => {
         const model = allModels[value as ModelSelection];

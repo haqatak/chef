@@ -12,18 +12,29 @@ export type ConvexTeam = {
 export const convexTeamsStore = atom<ConvexTeam[] | null>(null);
 
 const SELECTED_TEAM_SLUG_KEY = 'selectedConvexTeamSlug';
-export const selectedTeamSlugStore = atom<string | null>(null);
+
+// Initialize with stored value or default to 'local-team' to prevent hook ordering issues
+function getInitialTeamSlug(): string {
+  if (typeof window === 'undefined') return 'local-team';
+  try {
+    return getLocalStorage(SELECTED_TEAM_SLUG_KEY) || 'local-team';
+  } catch {
+    return 'local-team';
+  }
+}
+
+export const selectedTeamSlugStore = atom<string>(getInitialTeamSlug());
 
 export function getStoredTeamSlug(): string | null {
   return getLocalStorage(SELECTED_TEAM_SLUG_KEY);
 }
 
-export function setSelectedTeamSlug(teamSlug: string | null) {
+export function setSelectedTeamSlug(teamSlug: string) {
   setLocalStorage(SELECTED_TEAM_SLUG_KEY, teamSlug);
   selectedTeamSlugStore.set(teamSlug);
 }
 
-export function useSelectedTeamSlug(): string | null {
+export function useSelectedTeamSlug(): string {
   const selectedTeamSlug = useStore(selectedTeamSlugStore);
   return selectedTeamSlug;
 }
@@ -31,7 +42,7 @@ export function useSelectedTeamSlug(): string | null {
 export function useSelectedTeam(): ConvexTeam | null {
   const teams = useStore(convexTeamsStore);
   const slug = useSelectedTeamSlug();
-  if (teams === null || slug === null) {
+  if (teams === null) {
     return null;
   }
   return teams.find((t) => t.slug === slug) || null;
@@ -40,7 +51,7 @@ export function useSelectedTeam(): ConvexTeam | null {
 export async function waitForSelectedTeamSlug(caller?: string): Promise<string> {
   return new Promise((resolve) => {
     const selectedTeamSlug = selectedTeamSlugStore.get();
-    if (selectedTeamSlug !== null) {
+    if (selectedTeamSlug) {
       resolve(selectedTeamSlug);
       return;
     }
@@ -48,7 +59,7 @@ export async function waitForSelectedTeamSlug(caller?: string): Promise<string> 
       console.log(`[${caller}] Waiting for selected team slug...`);
     }
     const unsubscribe = selectedTeamSlugStore.subscribe((selectedTeamSlug) => {
-      if (selectedTeamSlug !== null) {
+      if (selectedTeamSlug) {
         unsubscribe();
         resolve(selectedTeamSlug);
       }

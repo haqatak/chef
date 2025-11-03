@@ -28,10 +28,13 @@ export const initializeChat = mutation({
     sessionId: v.id("sessions"),
     id: v.string(),
     projectInitParams: v.optional(
-      v.object({
-        teamSlug: v.string(),
-        workosAccessToken: v.string(),
-      }),
+      v.union(
+        v.object({
+          teamSlug: v.string(),
+          workosAccessToken: v.string(),
+        }),
+        v.null(),
+      ),
     ),
   },
   returns: v.null(),
@@ -46,7 +49,7 @@ export const initializeChat = mutation({
     await createNewChat(ctx, {
       id,
       sessionId,
-      projectInitParams,
+      projectInitParams: projectInitParams ?? undefined,
     });
   },
 });

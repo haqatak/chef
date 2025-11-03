@@ -9,9 +9,24 @@ import { QueryObserver } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 
 export function useTokenUsage(teamSlug: string | null): TeamUsageState {
+  // Skip token usage checks in local mode
+  const isLocalMode = teamSlug === 'local-team';
+  
   // getConvexAuthToken has a side effect may need
   const convex = useConvex();
-  void getConvexAuthToken(convex);
+  const token = getConvexAuthToken(convex);
+  
+  // Return mock data for local mode
+  if (isLocalMode || !token) {
+    return { 
+      isLoading: false, 
+      tokenUsage: {
+        centitokensUsed: 0,
+        centitokensQuota: 100000000, // Unlimited for local mode
+        isPaidPlan: true,
+      }
+    } as const;
+  }
 
   const usageByTeam = useStore(usageStore);
 

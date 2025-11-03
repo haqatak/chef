@@ -17,6 +17,7 @@ import type { ConvexToolSet } from 'chef-agent/types';
 import { npmInstallTool } from 'chef-agent/tools/npmInstall';
 import type { Tracer } from '~/lib/.server/chat';
 import { editTool } from 'chef-agent/tools/edit';
+import { writeTool } from 'chef-agent/tools/write';
 import { captureException, captureMessage } from '@sentry/remix';
 import type { SystemPromptOptions } from 'chef-agent/types';
 import { cleanupAssistantMessages } from 'chef-agent/cleanupAssistantMessages';
@@ -89,6 +90,7 @@ export async function convexAgent(args: {
     openaiProxyEnabled: getEnv('OPENAI_PROXY_ENABLED') == '1',
     usingOpenAi: modelProvider == 'OpenAI',
     usingGoogle: modelProvider == 'Google',
+    usingOllama: modelProvider == 'Ollama',
     resendProxyEnabled: getEnv('RESEND_PROXY_ENABLED') == '1',
     enableResend: featureFlags.enableResend,
   };
@@ -101,6 +103,7 @@ export async function convexAgent(args: {
   tools.addEnvironmentVariables = addEnvironmentVariablesTool();
   tools.view = viewTool;
   tools.edit = editTool;
+  tools.write = writeTool;
 
   const messagesForDataStream: CoreMessage[] = [
     {

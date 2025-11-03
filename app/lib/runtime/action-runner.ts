@@ -15,6 +15,7 @@ import { npmInstallToolParameters } from 'chef-agent/tools/npmInstall';
 import { workbenchStore } from '~/lib/stores/workbench.client';
 import { z } from 'zod';
 import { editToolParameters } from 'chef-agent/tools/edit';
+import { writeToolParameters } from 'chef-agent/tools/write';
 import { getAbsolutePath } from 'chef-agent/utils/workDir';
 import { cleanConvexOutput } from 'chef-agent/utils/shell';
 import type { BoltAction } from 'chef-agent/types';
@@ -379,6 +380,19 @@ export class ActionRunner {
           result = `Successfully edited ${args.path}`;
           break;
         }
+        case 'write': {
+          const args = writeToolParameters.parse(parsed.args);
+          const container = await this.#webcontainer;
+          const relPath = workDirRelative(args.path);
+          // Ensure parent directory exists
+          const parentDir = nodePath.dirname(relPath);
+          if (parentDir !== '.') {
+            await container.fs.mkdir(parentDir, { recursive: true });
+          }
+          await container.fs.writeFile(relPath, args.content);
+          result = `Successfully wrote ${args.path}`;
+          break;
+        }
         case 'npmInstall': {
           try {
             const args = npmInstallToolParameters.parse(parsed.args);
@@ -431,6 +445,12 @@ export class ActionRunner {
           await waitForContainerBootState(ContainerBootState.READY);
 
           result = '';
+          
+          // Check if we're in local mode (no Convex backend)
+          const sessionId = typeof window !== 'undefined' ? 
+            (localStorage.getItem('sessionId') || 'local-session-id') : 
+            'local-session-id';
+          const isLocalMode = sessionId === 'local-session-id';
 
           const commandErroredController = new AbortController();
           const abortSignal = AbortSignal.any([action.abortSignal, commandErroredController.signal]);
@@ -491,10 +511,28 @@ export class ActionRunner {
           };
 
           const t0 = performance.now();
-          result += await runCodegenAndTypecheck((output) => {
-            this.terminalOutput.set(output);
-          });
-          result += await run(['convex', 'dev', '--once', '--typecheck=disable'], outputLabels.convexDeploy);
+          
+          if (isLocalMode) {
+            // In local mode, skip Convex commands and only run TypeScript checks
+            logger.info('Local mode detected, skipping Convex deployment');
+            
+            // Only run frontend TypeScript check in local mode
+            result += await run(
+              ['tsc', '--noEmit', '-p', 'tsconfig.app.json'],
+              outputLabels.frontendTypecheck,
+              (output) => {
+                this.terminalOutput.set(output);
+              }
+            );
+            result += '\n\nLocal mode: TypeScript check completed. Convex deployment skipped.';
+          } else {
+            // Normal mode with Convex backend
+            result += await runCodegenAndTypecheck((output) => {
+              this.terminalOutput.set(output);
+            });
+            result += await run(['convex', 'dev', '--once', '--typecheck=disable'], outputLabels.convexDeploy);
+          }
+          
           const time = performance.now() - t0;
           logger.info('deploy action finished in', time);
 

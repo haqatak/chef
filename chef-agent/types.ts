@@ -3,6 +3,7 @@ import type { AbsolutePath, RelativePath } from './utils/workDir.js';
 import type { Tool } from 'ai';
 import type { npmInstallToolParameters } from './tools/npmInstall.js';
 import type { editToolParameters } from './tools/edit.js';
+import type { writeToolParameters } from './tools/write.js';
 import type { viewParameters } from './tools/view.js';
 import type { lookupDocsParameters } from './tools/lookupDocs.js';
 import type { z } from 'zod';
@@ -23,6 +24,7 @@ export interface SystemPromptOptions {
   openaiProxyEnabled: boolean;
   usingOpenAi: boolean;
   usingGoogle: boolean;
+  usingOllama: boolean;
   resendProxyEnabled: boolean;
   enableResend: boolean;
 }
@@ -85,6 +87,7 @@ export type ConvexToolSet = {
   addEnvironmentVariables?: Tool<typeof addEnvironmentVariablesParameters, void>;
   view?: Tool<typeof viewParameters, string>;
   edit?: Tool<typeof editToolParameters, string>;
+  write?: Tool<typeof writeToolParameters, string>;
   getConvexDeploymentName: Tool<typeof getConvexDeploymentNameParameters, string>;
 };
 

@@ -26,10 +26,10 @@ import useVersionNotificationBanner from './components/VersionNotificationBanner
 export async function loader() {
   // These environment variables are available in the client (they aren't secret).
   // eslint-disable-next-line local/no-direct-process-env
-  const CONVEX_URL = process.env.VITE_CONVEX_URL || globalThis.process.env.CONVEX_URL!;
-  const CONVEX_OAUTH_CLIENT_ID = globalThis.process.env.CONVEX_OAUTH_CLIENT_ID!;
+  const CONVEX_URL = process.env.VITE_CONVEX_URL || globalThis.process.env.CONVEX_URL || 'http://localhost:3210';
+  const CONVEX_OAUTH_CLIENT_ID = globalThis.process.env.CONVEX_OAUTH_CLIENT_ID || '';
   const WORKOS_REDIRECT_URI =
-    globalThis.process.env.VITE_WORKOS_REDIRECT_URI || globalThis.process.env.VERCEL_BRANCH_URL!;
+    globalThis.process.env.VITE_WORKOS_REDIRECT_URI || globalThis.process.env.VERCEL_BRANCH_URL || 'http://127.0.0.1:5173';
   return json({
     ENV: { CONVEX_URL, CONVEX_OAUTH_CLIENT_ID, WORKOS_REDIRECT_URI },
   });
@@ -85,23 +85,26 @@ export const Head = createHead(() => (
 export function Layout({ children }: { children: React.ReactNode }) {
   const theme = useStore(themeStore);
   const loaderData = useRouteLoaderData<typeof loader>('root');
-  const CONVEX_URL = import.meta.env.VITE_CONVEX_URL || (loaderData as any)?.ENV.CONVEX_URL;
-  if (!CONVEX_URL) {
-    throw new Error(`Missing CONVEX_URL: ${CONVEX_URL}`);
-  }
+  const CONVEX_URL = import.meta.env.VITE_CONVEX_URL || (loaderData as any)?.ENV.CONVEX_URL || 'http://localhost:3210';
+  const isLocalMode = CONVEX_URL.includes('localhost');
 
-  const [convex] = useState(
-    () =>
-      new ConvexReactClient(
-        CONVEX_URL,
-        // TODO: There's a potential issue in the convex client where the warning triggers
-        // even though in flight requests have completed
-        {
-          unsavedChangesWarning: false,
-          onServerDisconnectError: (message) => captureMessage(message),
+  const [convex] = useState(() => {
+    // In local mode, use a non-existent URL to prevent WebSocket connection attempts
+    const url = isLocalMode ? 'https://local-mode-disabled.invalid' : CONVEX_URL;
+    
+    return new ConvexReactClient(
+      url,
+      {
+        unsavedChangesWarning: false,
+        onServerDisconnectError: (message) => {
+          // Suppress all disconnect errors in local mode
+          if (!isLocalMode) {
+            captureMessage(message);
+          }
         },
-      ),
-  );
+      },
+    );
+  });
 
   // TODO does it still make sense?
   useEffect(() => {

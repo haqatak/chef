@@ -35,3 +35,30 @@ export function useConvexChatHomepage(chatId: string) {
     subchats,
   };
 }
+
+export function useConvexChatExisting(chatId: string) {
+  useProjectInitializer(chatId);
+  const [chatInitialized, setChatInitialized] = useState(true); // For existing chats, already initialized
+  const initializeChat = useHomepageInitializeChat(chatId, setChatInitialized);
+  const storeMessageHistory = useStoreMessageHistory();
+  // Don't set up a new container for existing chats
+  const initialMessages = useInitialMessages(chatId); // Load messages immediately for existing chats
+  useBackupSyncState(chatId, initialMessages?.loadedSubchatIndex, initialMessages?.deserialized);
+  const sessionId = useConvexSessionIdOrNullOrLoading();
+  const subchats = useQuery(
+    api.subchats.get,
+    sessionId
+      ? {
+          chatId,
+          sessionId,
+        }
+      : 'skip',
+  );
+
+  return {
+    initializeChat,
+    storeMessageHistory,
+    initialMessages: !initialMessages ? initialMessages : initialMessages?.deserialized,
+    subchats,
+  };
+}

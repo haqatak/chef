@@ -18,8 +18,12 @@ export const verifySession = query({
       return false;
     }
     const session = await ctx.db.get(sessionId);
-    if (!session || !session.memberId) {
+    if (!session) {
       return false;
+    }
+    // For anonymous sessions (no memberId), just check if the session exists
+    if (!session.memberId) {
+      return true;
     }
     return isValidSessionForConvexOAuth(ctx, { sessionId, memberId: session.memberId });
   },
@@ -27,8 +31,12 @@ export const verifySession = query({
 
 export async function isValidSession(ctx: QueryCtx, args: { sessionId: Id<"sessions"> }) {
   const session = await ctx.db.get(args.sessionId);
-  if (!session || !session.memberId) {
+  if (!session) {
     return false;
+  }
+  // For anonymous sessions (no memberId), just check if the session exists
+  if (!session.memberId) {
+    return true;
   }
   return await isValidSessionForConvexOAuth(ctx, { sessionId: args.sessionId, memberId: session.memberId });
 }
@@ -100,16 +108,38 @@ export const startSession = mutation({
   args: {},
   returns: v.id("sessions"),
   handler: async (ctx) => {
-    const member = await getOrCreateCurrentMember(ctx);
-    const existingSession = await ctx.db
-      .query("sessions")
-      .withIndex("byMemberId", (q) => q.eq("memberId", member))
-      .unique();
-    if (existingSession) {
-      return existingSession._id;
+    const identity = await ctx.auth.getUserIdentity();
+    
+    // If authenticated, use the authenticated flow
+    if (identity) {
+      const member = await getOrCreateCurrentMember(ctx);
+      const existingSession = await ctx.db
+        .query("sessions")
+        .withIndex("byMemberId", (q) => q.eq("memberId", member))
+        .unique();
+      if (existingSession) {
+        return existingSession._id;
+      }
+      return ctx.db.insert("sessions", {
+        memberId: member,
+      });
     }
+    
+    // For local development without auth, create an anonymous session
+    // Check if there's already an anonymous session (this is a simple approach)
+    // In production, you'd want a more robust solution
+    const anonymousSessions = await ctx.db
+      .query("sessions")
+      .filter((q) => q.eq(q.field("memberId"), undefined))
+      .take(1);
+    
+    if (anonymousSessions.length > 0) {
+      return anonymousSessions[0]._id;
+    }
+    
+    // Create a new anonymous session
     return ctx.db.insert("sessions", {
-      memberId: member,
+      memberId: undefined,
     });
   },
 });

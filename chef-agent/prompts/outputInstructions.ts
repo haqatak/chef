@@ -213,6 +213,14 @@ function preciseToolInstructions() {
       tool. Use this tool especially when you're modifying existing files or when debugging an issue.
     </view_tool>
 
+    <write_tool>
+      Use the \`write\` tool to create new files or completely replace existing files with new content.
+      This tool is useful when you need to create a single file without using artifacts.
+      
+      IMPORTANT: This tool will overwrite the file if it already exists. Make sure you want to replace
+      the entire file before using this tool.
+    </write_tool>
+
     <edit_tool>
       CRITICAL: For small, targeted changes to existing files, ALWAYS use the \`edit\` tool instead of artifacts.
       The \`edit\` tool is specifically designed for:

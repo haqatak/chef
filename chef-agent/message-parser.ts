@@ -9,6 +9,12 @@ const ARTIFACT_TAG_CLOSE = '</boltArtifact>';
 const ARTIFACT_ACTION_TAG_OPEN = '<boltAction';
 const ARTIFACT_ACTION_TAG_CLOSE = '</boltAction>';
 
+// Support for XML function call format (e.g., from Ollama models)
+const FUNCTION_TAG_OPEN = '<function=';
+const FUNCTION_TAG_CLOSE = '</function_calls>';
+const PARAMETER_TAG_OPEN = '<parameter=';
+const PARAMETER_TAG_CLOSE = '</parameter>';
+
 const logger = createScopedLogger('MessageParser');
 
 export interface ArtifactCallbackData extends BoltArtifactData {
@@ -79,7 +85,76 @@ export class StreamingMessageParser {
     return output;
   }
 
+  // Convert XML function call format to boltArtifact format
+  static convertFunctionCallsToArtifacts(content: string): string {
+    // Handle complete function_calls blocks
+    const completeFunctionCallRegex = /<function_calls>([\s\S]*?)<\/function_calls>/g;
+    
+    content = content.replace(completeFunctionCallRegex, (match, functionContent) => {
+      logger.debug('Found complete function_calls block');
+      
+      // Extract function name and parameters
+      const functionMatch = functionContent.match(/<function=([^>]+)>/)
+      if (!functionMatch) {
+        logger.debug('No function match found');
+        return match;
+      }
+      
+      const functionName = functionMatch[1];
+      logger.debug('Function name:', functionName);
+      
+      // Only handle write/edit functions
+      if (functionName !== 'write' && functionName !== 'edit') {
+        return match;
+      }
+      
+      // Extract path parameter
+      const pathMatch = functionContent.match(/<parameter=path>([\s\S]*?)<\/parameter>/);
+      const contentMatch = functionContent.match(/<parameter=content>([\s\S]*?)<\/parameter>/);
+      
+      if (!pathMatch || !contentMatch) {
+        logger.debug('Missing path or content parameter');
+        return match;
+      }
+      
+      const filePath = pathMatch[1].trim();
+      const fileContent = contentMatch[1].trim();
+      
+      logger.debug('Converting to boltArtifact:', filePath);
+      
+      // Convert to boltArtifact format
+      const artifactId = filePath.replace(/[^a-zA-Z0-9]/g, '-');
+      const title = `File: ${filePath}`;
+      
+      return `<boltArtifact id="${artifactId}" title="${title}" type="application/vnd.bolt.file">
+  <boltAction type="file" filePath="${filePath}">${fileContent}</boltAction>
+</boltArtifact>`;
+    });
+    
+    // Also handle the alternative format: <function=write> directly without function_calls wrapper
+    const directFunctionRegex = /<function=(write|edit)>\s*<parameter=path>([\s\S]*?)<\/parameter>\s*<parameter=content>([\s\S]*?)<\/parameter>/g;
+    
+    content = content.replace(directFunctionRegex, (match, functionName, filePath, fileContent) => {
+      logger.debug('Found direct function call format:', functionName, filePath);
+      
+      const cleanPath = filePath.trim();
+      const cleanContent = fileContent.trim();
+      
+      const artifactId = cleanPath.replace(/[^a-zA-Z0-9]/g, '-');
+      const title = `File: ${cleanPath}`;
+      
+      return `<boltArtifact id="${artifactId}" title="${title}" type="application/vnd.bolt.file">
+  <boltAction type="file" filePath="${cleanPath}">${cleanContent}</boltAction>
+</boltArtifact>`;
+    });
+    
+    return content;
+  }
+
   parse(partId: PartId, input: string) {
+    // Convert XML function calls to boltArtifact format if present
+    input = StreamingMessageParser.convertFunctionCallsToArtifacts(input);
+    
     let state = this.#messages.get(partId);
 
     if (!state) {

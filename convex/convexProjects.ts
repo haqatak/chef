@@ -119,9 +119,13 @@ export async function startProvisionConvexProjectHelper(
     console.error(`Session not found: ${args.sessionId}`);
     throw new ConvexError({ code: "NotAuthorized", message: "Chat not found" });
   }
+  
+  // For local development without auth, skip project provisioning
   if (session.memberId === undefined) {
-    throw new ConvexError({ code: "NotAuthorized", message: "Must be logged in to connect a project" });
+    console.log(`[Local Mode] Skipping Convex project provisioning for anonymous session: ${args.sessionId}`);
+    return;
   }
+  
   // OAuth flow
   if (args.projectInitParams === undefined) {
     console.error(`Must provide projectInitParams for oauth: ${args.sessionId}`);
